@@ -21,7 +21,7 @@ function StoreScreen({ products, selected }: { products: Product[]; selected: nu
   );
   const [selectedCategory, setSelectedCategory] = useState<Product["category"] | null>(null);
 
-  // Agrupar y ordenar las categorías por cantidad de productos (la primera con más productos)
+  // Agrupar y ordenar las categorías por cantidad de productos
   const categories = useMemo<[Product["category"], Product[]][]>(() => {
     let draft = products;
 
@@ -43,12 +43,18 @@ function StoreScreen({ products, selected }: { products: Product[]; selected: nu
       return map;
     }, new Map());
 
-    // Convertir a un array y ordenar por cantidad de productos, de mayor a menor
-    return Array.from(groups.entries()).sort(([, productsA], [, productsB]) => productsB.length - productsA.length);
+    // Convertir a un array y ordenar por cantidad de productos, de mayor a menor, y mover "Asignando" al final
+    return Array.from(groups.entries())
+      .sort(([, productsA], [, productsB]) => productsB.length - productsA.length)
+      .sort(([categoryA], [categoryB]) => {
+        if (categoryA === "Asignando") return 1;
+        if (categoryB === "Asignando") return -1;
+        return 0;
+      });
   }, [query, products]);
 
   function handleSelectCategory(category: Product["category"], index: number) {
-    if (index === 0) return; // No hacer nada si es la primera categoría
+    if (index === 1) return; // No hacer nada si es la segunda categoría
     setSelectedCategory((currentSelectedCategory) =>
       currentSelectedCategory === category ? null : category,
     );
@@ -128,20 +134,20 @@ function StoreScreen({ products, selected }: { products: Product[]; selected: nu
               <div key={category} className="flex flex-col gap-4 border-t py-4" id={category}>
                 <div
                   className={cn("flex items-center justify-between gap-4", {
-                    "cursor-pointer": layout === "list" && index > 0, // Solo las demás categorías son colapsables
+                    "cursor-pointer": layout === "list" && index !== 1, // Solo las demás categorías son colapsables
                   })}
                   onClick={() => {
-                    if (index > 0) handleSelectCategory(category, index); // Expandir solo si no es la primera
+                    if (index !== 1) handleSelectCategory(category, index); // Expandir solo si no es la segunda
                   }}
                 >
                   <h2 className="text-xl font-medium sm:text-2xl">
                     {category} <span className="opacity-70">({categoryProducts.length})</span>
                   </h2>
-                  {layout === "list" && index > 0 && <ChevronDown className="h-6 w-6 opacity-40" />} {/* Mostrar la flecha solo en las demás */}
+                  {layout === "list" && index !== 1 && <ChevronDown className="h-6 w-6 opacity-40" />} {/* Mostrar la flecha solo en las demás */}
                 </div>
 
-                {/* Mostrar la primera categoría siempre como grid, las demás solo si están seleccionadas */}
-                {(index === 0 || selectedCategory === category || layout === "grid") && (
+                {/* Mostrar la segunda categoría siempre como grid, las demás solo si están seleccionadas */}
+                {(index === 1 || selectedCategory === category || layout === "grid") && (
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     {categoryProducts.length ? (
                       categoryProducts.map((product) => (
